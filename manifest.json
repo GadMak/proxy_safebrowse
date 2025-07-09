@@ -1,0 +1,70 @@
+{
+  "manifest_version": 3,
+  "name": "SafeBrowse AI",
+  "version": "1.0.0",
+  "description": "Un plugin de navigation intelligent pour la détection et la prévention des sites de phishing, des menaces web, des vulnérabilités, des sites adultes et des publicités.",
+  "author": "Gad Makengi",
+
+  "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "32": "images/icon32.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    },
+    "default_title": "SafeBrowse AI"
+  },
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content_scripts/content_analyzer.js"],
+      "css": ["content_scripts/content_styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "options_ui": {
+    "page": "pages/options.html",
+    "open_in_tab": true
+  },
+
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "pages/threats.html",
+        "pages/blocking_page.html",
+        "assets/adult_blocklist.txt",
+        "images/icon128.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "alarms",
+    "scripting",
+    "notifications",
+    "declarativeNetRequest",
+    "declarativeNetRequestWithHostAccess",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "<all_urls>"
+  ]
+}
