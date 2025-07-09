@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeBrowse AI</title>
+    <link rel="stylesheet" href="popup.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img src="../images/icon48.png" alt="SafeBrowse AI Logo" class="logo">
+            <h1 class="title">SafeBrowse AI</h1>
+        </header>
+
+        <div class="status-card" id="statusCard">
+            <div class="status-icon-container">
+                <i id="statusIcon" class="fas fa-check-circle status-safe-icon"></i>
+            </div>
+            <p id="statusMessage" class="status-message">Vérification en cours...</p>
+            <p id="currentUrl" class="current-url"></p>
+        </div>
+
+        <!-- Résumé de l'analyse -->
+        <div class="threat-summary" id="threatSummary">
+            <h2>Résumé de l'analyse :</h2>
+            <ul class="threat-summary-list">
+                <li>Détection de phishing : <strong id="phishing-status">-</strong></li>
+                <li>Détection de menaces : <strong id="threats-status">-</strong></li>
+                <li>Détection de vulnérabilités web : <strong id="vulnerabilities-status">-</strong></li>
+                <li>Nombre de pubs détectées : <strong id="ads-count">0</strong></li>
+            </ul>
+        </div>
+
+        <!-- Lien dynamique vers détails -->
+        <div id="viewDetailsContainer" class="view-details-container" style="display: none;"></div>
+
+        <div class="actions">
+            <button id="whitelistBtn" class="btn btn-primary">
+                <i class="fas fa-shield-alt"></i> Ajouter à la liste blanche
+            </button>
+            <button id="reportBtn" class="btn btn-secondary">
+                <i class="fas fa-flag"></i> Signaler un site
+            </button>
+            <button id="optionsBtn" class="btn btn-tertiary">
+                <i class="fas fa-cogs"></i> Paramètres
+            </button>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
