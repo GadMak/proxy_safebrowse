@@ -191,11 +191,47 @@ async function analyzeUrlWithSafeProxy(tabId, url) {
     }
     const { enableThreats = true } = await chrome.storage.sync.get("enableThreats");
     if (!enableThreats) return;
-    const isDangerous = await checkGoogleSafeBrowseProxy(url);
-    if (isDangerous) {
-        await blockPage(tabId, domain, 'Site malveillant selon Google');
-    } else {
-        await updateUi(tabId, 'safe', domain);
+
+    // --- MODIFIE ICI ---
+    try {
+        const response = await fetch(SAFE_PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await response.json();
+
+        if (data.matches && data.matches.length > 0) {
+            // On extrait les types de menaces (ex : PHISHING, MALWARE…)
+            const threats = data.matches.map(m => m.threatType.toLowerCase());
+            const hasPhishing = threats.includes("phishing");
+
+            // Enregistre tout dans le storage !
+            await chrome.storage.local.set({
+                [`threats_${tabId}`]: {
+                    status: 'dangerous',
+                    url,
+                    threats
+                }
+            });
+
+            // Mets à jour l’icône
+            await chrome.action.setIcon({ tabId, path: ICON_PATHS.dangerous });
+
+            // (Optionnel) bloque la page
+            // await blockPage(tabId, domain, 'Site malveillant selon Google');
+        } else {
+            await chrome.storage.local.set({
+                [`threats_${tabId}`]: {
+                    status: 'safe',
+                    url,
+                    threats: []
+                }
+            });
+            await chrome.action.setIcon({ tabId, path: ICON_PATHS.safe });
+        }
+    } catch (error) {
+        console.error("[SafeBrowse AI] Erreur communication proxy Safe Browsing :", error);
     }
 }
 
