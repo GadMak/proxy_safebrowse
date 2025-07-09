@@ -1,0 +1,124 @@
+:root {
+    --cb-primary-color: #4CAF50; /* Vert pour sûr */
+    --cb-danger-color: #F44336;  /* Rouge pour dangereux */
+    --cb-warning-color: #FFC107; /* Jaune pour avertissement */
+    --cb-text-color-dark: #333;
+    --cb-text-color-light: #fff;
+    --cb-background-light: #f8f9fa;
+    --cb-border-color: #e0e0e0;
+}
+
+/* Style de la bannière d'alerte en haut de la page */
+.safebrowse-ai-alert-banner {
+    /* Positionnement fixe en haut de la page */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2147483647; /* Très haute valeur pour être au-dessus de tout */
+
+    /* Styles visuels */
+    padding: 10px 20px;
+    font-family: 'Poppins', sans-serif; /* Assurez-vous que cette police est chargée ou fallback */
+    font-size: 14px;
+    text-align: center;
+    color: var(--cb-text-color-light);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    transform: translateY(0); /* S'assure que la bannière est visible */
+}
+
+/* Couleurs spécifiques pour la bannière */
+.safebrowse-ai-alert-banner.warning {
+    background-color: var(--cb-warning-color);
+    color: var(--cb-text-color-dark); /* Texte noir sur jaune */
+}
+
+.safebrowse-ai-alert-banner.danger {
+    background-color: var(--cb-danger-color);
+    color: var(--cb-text-color-light);
+}
+
+/* Icônes dans la bannière (Font Awesome) */
+.safebrowse-ai-alert-banner .fa {
+    font-size: 1.2em;
+}
+
+/* Bouton pour fermer la bannière */
+.safebrowse-ai-alert-banner .close-btn {
+    background: none;
+    border: none;
+    color: inherit; /* Hérite la couleur du texte de la bannière */
+    font-size: 1.5em;
+    cursor: pointer;
+    margin-left: 20px;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.safebrowse-ai-alert-banner .close-btn:hover {
+    opacity: 1;
+}
+
+form.safebrowse-ai-insecure-form {
+    border: 2px dashed var(--cb-danger-color) !important; /* !important pour forcer le style */
+    box-shadow: 0 0 8px rgba(244, 67, 54, 0.5) !important;
+}
+
+/* Style pour les éléments suspects (liens, formulaires, etc.) */
+.safebrowse-ai-suspicious-element {
+    outline: 3px solid #ff4d4d !important; /* Bordure rouge vive */
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5) !important;
+    border-radius: 4px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* Bannière d'alerte en haut de la page */
+#safebrowse-ai-alert-banner {
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 12px 20px;
+    box-sizing: border-box;
+    z-index: 99999999;
+    color: white;
+    font-family: sans-serif;
+    font-size: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transform: translateY(0);
+    transition: transform 0.4s ease-in-out;
+}
+
+#safebrowse-ai-alert-banner.warning {
+    background-color: #ff9800; /* Orange pour avertissement */
+}
+
+#safebrowse-ai-alert-banner.danger {
+    background-color: #d32f2f; /* Rouge foncé pour danger */
+}
+
+#safebrowse-ai-alert-banner .message-text::before {
+    content: '⚠️'; /* Icône d'avertissement */
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+#safebrowse-ai-alert-banner.danger .message-text::before {
+    content: '🛑'; /* Icône de danger */
+}
+
+#safebrowse-ai-alert-banner .close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+}
