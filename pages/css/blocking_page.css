@@ -1,0 +1,210 @@
+:root {
+    --primary-color: #2196F3; /* Bleu primaire */
+    --danger-color: #F44336;  /* Rouge principal pour le danger */
+    --danger-dark: #D32F2F;
+    --secondary-color: #6c757d; /* Gris secondaire */
+    --tertiary-color: #f0f0f0; /* Gris clair pour bouton tertiaire */
+    --background-color: #e0e0e0; /* Fond clair */
+    --card-background: #ffffff;
+    --text-color-dark: #333;
+    --text-color-light: #fff;
+    --border-color: #ccc;
+    --box-shadow-light: 0 4px 15px rgba(0, 0, 0, 0.08);
+    --box-shadow-dark: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color-dark);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Prend toute la hauteur de la fenêtre */
+    text-align: center;
+}
+
+.container {
+    max-width: 600px;
+    margin: 20px;
+    background-color: var(--card-background);
+    border-radius: 15px;
+    box-shadow: var(--box-shadow-dark);
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.logo {
+    width: 64px;
+    height: 64px;
+}
+
+.title {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--text-color-dark);
+    margin: 0;
+}
+
+/* Alert Card */
+.alert-card {
+    background-color: var(--card-background);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 0 0 5px var(--danger-color), var(--box-shadow-light); /* Double bordure */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.alert-icon-container {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: var(--danger-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.alert-icon {
+    font-size: 3.5em;
+    color: var(--text-color-light);
+}
+
+.alert-title {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--danger-color);
+    margin: 0;
+}
+
+.alert-message {
+    font-size: 1.1em;
+    color: var(--text-color-dark);
+    margin: 0;
+}
+
+.blocked-url {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--primary-color);
+    word-break: break-all;
+    margin: 10px 0;
+    padding: 5px 10px;
+    background-color: var(--background-color);
+    border-radius: 8px;
+    border: 1px dashed var(--border-color);
+}
+
+.reason-message {
+    font-size: 1em;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Action Buttons */
+.actions-section {
+    background-color: var(--background-color);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--box-shadow-light);
+}
+
+.actions-section h3 {
+    font-size: 1.3em;
+    color: var(--text-color-dark);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn {
+    padding: 15px 25px;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn i {
+    font-size: 1.2em;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--text-color-light);
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-tertiary {
+    background-color: var(--tertiary-color);
+    color: var(--text-color-dark);
+    border: 1px solid var(--border-color);
+}
+
+.btn-tertiary:hover {
+    background-color: #e6e6e6;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+}
+
+.btn-danger-proceed {
+    background-color: var(--danger-color);
+    color: var(--text-color-light);
+}
+
+.btn-danger-proceed:hover {
+    background-color: var(--danger-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+.warning-text {
+    font-size: 0.9em;
+    color: var(--danger-color);
+    margin-top: 20px;
+    font-weight: 600;
+}
+
+.footer {
+    font-size: 0.85em;
+    color: #888;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 20px;
+}
