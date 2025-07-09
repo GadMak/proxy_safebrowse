@@ -1,1 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeBrowse AI - Site Bloqué</title>
+    <link rel="stylesheet" href="../pages/css/blocking_page.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img src="../images/icon128.png" alt="SafeBrowse AI Logo" class="logo">
+            <h1 class="title">SafeBrowse AI</h1>
+        </header>
 
+        <div class="alert-card">
+            <div class="alert-icon-container">
+                <i class="fas fa-exclamation-triangle alert-icon"></i>
+            </div>
+            <h2 class="alert-title">Accès Bloqué pour Votre Sécurité !</h2>
+            <p class="alert-message">SafeBrowse AI a détecté des contenue pour adulte sur le site suivant :</p>
+            <p class="blocked-url" id="blockedUrlDisplay"></p>
+            <p class="reason-message" id="reasonMessage"></p>
+        </div>
+
+        <div class="actions-section">
+            <h3>Que souhaitez-vous faire ?</h3>
+            <div class="action-buttons">
+                <button id="goBackBtn" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour à la page précédente
+                </button>
+                <button id="reportFalsePositiveBtn" class="btn btn-tertiary">
+                    <i class="fas fa-bug"></i> Signaler un Faux Positif
+                </button>
+                <button id="proceedAnywayBtn" class="btn btn-danger-proceed">
+                    <i class="fas fa-hand-paper"></i> Continuer quand même (déconseillé)
+                </button>
+            </div>
+            <p class="warning-text">Continuer vers ce site est fortement déconseillé et pourrait compromettre votre sécurité.</p>
+        </div>
+
+        <footer class="footer">
+            <p>&copy; 2025 SafeBrowse AI par Gad Makengi. Tous droits réservés.</p>
+            <p>Protection intelligente contre le phishing et les menaces web.</p>
+        </footer>
+    </div>
+
+    <script src="../pages/script/blocking_page.js"></script>
+</body>
+</html>
