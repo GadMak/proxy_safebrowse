@@ -52,6 +52,22 @@ document.addEventListener('DOMContentLoaded', async () => {
                 statusCard.className = 'status-card';
                 statusIcon.parentElement.className = 'status-icon-container';
 
+                if (hasPhishing) {
+                    statusCard.className = 'status-card status-phishing-card';
+                    statusIcon.className = 'fas fa-skull-crossbones status-icon'; // ou autre icône choquante
+                    statusIcon.parentElement.className = 'status-phishing-icon-container';
+                    statusMessage.textContent = "🚨 ATTENTION : site de phishing détecté !";
+                    statusMessage.style.fontWeight = 'bold';
+                    statusMessage.style.color = '#c82333'; // rouge vif
+                
+                    // Optionnel : lien pour en savoir plus ou signaler
+                    if (viewDetailsContainer) {
+                        viewDetailsContainer.style.display = 'block';
+                        viewDetailsContainer.innerHTML = `<span style="color:#c82333;font-weight:bold;">Ce site a été signalé comme site de phishing. Évitez d’entrer des informations personnelles !</span>`;
+                    }
+                    return; // on arrête là pour prioriser l’affichage phishing
+                }
+
                 switch (status) {
                     case 'safe':
                         statusCard.classList.add('status-safe-card');
