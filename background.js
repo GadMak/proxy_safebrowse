@@ -11,7 +11,7 @@ let ADULT_BLOCKLIST = []; // Chargée dynamiquement
 let currentWhitelist = [];
 
 // Remplace ici par l'URL de ton proxy Google Safe Browsing
-const SAFE_PROXY_URL = "https://safe-proxy-abcdef.vercel.app/check"; 
+const SAFE_PROXY_URL = "https://proxysafebrowse.vercel.app//check"; 
 
 function normalizeDomain(domain) {
     return domain.replace(/^www\./i, '').toLowerCase();
