@@ -302,3 +302,14 @@ body {
         transform: translateY(0);
     }
 }
+.status-phishing-card {
+    background: linear-gradient(135deg, #ff0000 30%, #ffe5e5 100%);
+    color: #c82333;
+    border: 2px solid #c82333;
+    box-shadow: 0 0 10px #c8233380;
+}
+.status-phishing-icon-container {
+    background: #fff5f5;
+    border-radius: 100px;
+    padding: 10px;
+}
