@@ -46,7 +46,9 @@
       "resources": [
         "pages/threats.html",
         "pages/blocking_page.html",
+        "pages/blocking1_page.html",
         "assets/adult_blocklist.txt",
+        "assets/phishing_blocklist.txt",
         "images/icon128.png"
       ],
       "matches": ["<all_urls>"]

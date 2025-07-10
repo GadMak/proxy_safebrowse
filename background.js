@@ -8,17 +8,18 @@ const ICON_PATHS = {
 };
 const MAX_DYNAMIC_RULES = 5000;
 let ADULT_BLOCKLIST = []; // Chargée dynamiquement
+let PHISHING_BLOCKLIST = []; // Blocklist phishing locale
 let currentWhitelist = [];
 
-// Remplace ici par l'URL de ton proxy Google Safe Browsing
+// URL proxy Google Safe Browsing
 const SAFE_PROXY_URL = "https://proxysafebrowse.vercel.app/api/check";
- 
 
+// --- UTILS ---
 function normalizeDomain(domain) {
     return domain.replace(/^www\./i, '').toLowerCase();
 }
 
-// --- Charger la blocklist depuis le fichier TXT ---
+// --- Chargement de la blocklist adulte ---
 async function loadAdultBlocklist() {
     try {
         const url = chrome.runtime.getURL('assets/adult_blocklist.txt');
@@ -35,9 +36,31 @@ async function loadAdultBlocklist() {
     }
 }
 
+// --- Chargement de la blocklist phishing locale ---
+async function loadPhishingBlocklist() {
+    try {
+        const url = chrome.runtime.getURL('assets/phishing_blocklist.txt');
+        const response = await fetch(url);
+        const text = await response.text();
+        PHISHING_BLOCKLIST = text
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith('#'));
+        console.log(`[SafeBrowse AI] Blocklist phishing chargée : ${PHISHING_BLOCKLIST.length} URLs.`);
+    } catch (err) {
+        console.error('[SafeBrowse AI] Erreur chargement blocklist phishing :', err);
+        PHISHING_BLOCKLIST = [];
+    }
+}
+
+// --- (Re)charge les blocklists à chaque démarrage ---
+loadAdultBlocklist();
+loadPhishingBlocklist();
+
 // --- Événements d'installation et d'update ---
 chrome.runtime.onInstalled.addListener(async () => {
     await loadAdultBlocklist();
+    await loadPhishingBlocklist();
     await chrome.storage.local.set({
         userWhitelist: [],
         localBlacklist: ["phishing-example.com", "malicious-site.net"]
@@ -46,12 +69,10 @@ chrome.runtime.onInstalled.addListener(async () => {
     chrome.alarms.create('updateBlocklistAlarm', { delayInMinutes: 5, periodInMinutes: 1440 });
 });
 
-// --- (Re)charge la blocklist à chaque démarrage ---
-loadAdultBlocklist();
-
 chrome.alarms.onAlarm.addListener(async alarm => {
     if (alarm.name === 'updateBlocklistAlarm') {
         await loadAdultBlocklist();
+        await loadPhishingBlocklist();
         await fetchAndUpdateRules();
     }
 });
@@ -106,6 +127,30 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
         await chrome.action.setIcon({ tabId, path: ICON_PATHS.safe });
     }
 });
+
+// --- Vérifie si l'URL figure dans la blocklist phishing locale ---
+function checkLocalPhishingBlocklist(url) {
+    if (!PHISHING_BLOCKLIST.length) return false;
+    // Vérifie si l'URL commence par une URL de la liste
+    return PHISHING_BLOCKLIST.some(phishUrl => url.startsWith(phishUrl));
+}
+
+// --- Analyse heuristique simple ---
+function checkHeuristic(url) {
+    const patterns = [
+        /login.*secure/i,
+        /update.*paypal/i,
+        /verify.*account/i,
+        /bank.*verify/i,
+        /gift.*free/i,
+        /confirm.*identity/i,
+        /\.ru\//i,
+        /xn--/, // Punycode
+        /@.*@/, // Plusieurs @ dans l'URL
+        /(\.zip|\.rar)\/?$/i
+    ];
+    return patterns.some(re => re.test(url));
+}
 
 // --- Obtenir la liste des domaines à bloquer (adulte + blacklist locale) ---
 async function getBlocklistDomains() {
@@ -178,7 +223,7 @@ async function fetchAndUpdateRules() {
     await generateDeclarativeNetRequestRules();
 }
 
-// --- Détection Phishing avec Google Safe Browsing PROXY ---
+// --- Chaîne de détection Phishing (proxy + local + heuristique) ---
 async function analyzeUrlWithSafeProxy(tabId, url) {
     let domain;
     try {
@@ -192,12 +237,30 @@ async function analyzeUrlWithSafeProxy(tabId, url) {
     }
     const { enableThreats = true } = await chrome.storage.sync.get("enableThreats");
     if (!enableThreats) return;
-    const isDangerous = await checkGoogleSafeBrowseProxy(url);
-    if (isDangerous) {
-        await blockPage(tabId, domain, 'Site malveillant selon Google');
-    } else {
-        await updateUi(tabId, 'safe', domain);
+
+    // 1. Google Safe Browsing Proxy
+    const isDangerousGSB = await checkGoogleSafeBrowseProxy(url);
+    if (isDangerousGSB) {
+        await blockPage(tabId, domain, 'Phishing détecté (Google Safe Browsing)');
+        return;
     }
+
+    // 2. Blocklist locale phishing
+    const isDangerousPhishBlocklist = checkLocalPhishingBlocklist(url);
+    if (isDangerousPhishBlocklist) {
+        await blockPage(tabId, domain, 'Phishing détecté (blocklist locale)');
+        return;
+    }
+
+    // 3. Heuristique
+    const isDangerousHeur = checkHeuristic(url);
+    if (isDangerousHeur) {
+        await blockPage(tabId, domain, 'Phishing détecté (Analyse heuristique)');
+        return;
+    }
+
+    // Aucun danger détecté
+    await updateUi(tabId, 'safe', domain);
 }
 
 async function blockPage(tabId, domain, reason) {
@@ -218,7 +281,7 @@ async function updateUi(tabId, status, domain) {
     }
 }
 
-// --- Nouvelle fonction pour communiquer avec ton proxy Google Safe Browsing ---
+// --- Fonction pour communiquer avec le proxy Google Safe Browsing ---
 async function checkGoogleSafeBrowseProxy(url) {
     try {
         const response = await fetch(SAFE_PROXY_URL, {
