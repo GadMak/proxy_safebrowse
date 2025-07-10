@@ -302,7 +302,10 @@ body {
         transform: translateY(0);
     }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3065daac2802cffa773d60b355b43ab495474bc9
 .status-phishing-card {
     background: linear-gradient(135deg, #ff0000 30%, #ffe5e5 100%);
     color: #c82333;
@@ -314,4 +317,7 @@ body {
     border-radius: 100px;
     padding: 10px;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 3065daac2802cffa773d60b355b43ab495474bc9
