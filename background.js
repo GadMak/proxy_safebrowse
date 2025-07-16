@@ -7,19 +7,21 @@ const ICON_PATHS = {
     default: { "16": "images/icon16.png", "32": "images/icon32.png" }
 };
 const MAX_DYNAMIC_RULES = 5000;
-let ADULT_BLOCKLIST = []; // Chargée dynamiquement
-let PHISHING_BLOCKLIST = []; // Blocklist phishing locale
+let ADULT_BLOCKLIST = [];
+let PHISHING_BLOCKLIST = [];
 let currentWhitelist = [];
 
-// URL proxy Google Safe Browsing
 const SAFE_PROXY_URL = "https://proxysafebrowse.vercel.app/api/check";
 
 // --- UTILS ---
 function normalizeDomain(domain) {
     return domain.replace(/^www\./i, '').toLowerCase();
 }
+function normalizeUrlForBlocklist(url) {
+    return url.replace(/^https?:\/\//i, '').replace(/\/$/, '').toLowerCase();
+}
 
-// --- Chargement de la blocklist adulte ---
+// --- Blocklists ---
 async function loadAdultBlocklist() {
     try {
         const url = chrome.runtime.getURL('assets/adult_blocklist.txt');
@@ -35,8 +37,6 @@ async function loadAdultBlocklist() {
         ADULT_BLOCKLIST = [];
     }
 }
-
-// --- Chargement de la blocklist phishing locale ---
 async function loadPhishingBlocklist() {
     try {
         const url = chrome.runtime.getURL('assets/phishing_blocklist.txt');
@@ -52,12 +52,10 @@ async function loadPhishingBlocklist() {
         PHISHING_BLOCKLIST = [];
     }
 }
-
-// --- (Re)charge les blocklists à chaque démarrage ---
 loadAdultBlocklist();
 loadPhishingBlocklist();
 
-// --- Événements d'installation et d'update ---
+// --- Chrome Events ---
 chrome.runtime.onInstalled.addListener(async () => {
     await loadAdultBlocklist();
     await loadPhishingBlocklist();
@@ -68,7 +66,6 @@ chrome.runtime.onInstalled.addListener(async () => {
     await fetchAndUpdateRules();
     chrome.alarms.create('updateBlocklistAlarm', { delayInMinutes: 5, periodInMinutes: 1440 });
 });
-
 chrome.alarms.onAlarm.addListener(async alarm => {
     if (alarm.name === 'updateBlocklistAlarm') {
         await loadAdultBlocklist();
@@ -76,13 +73,11 @@ chrome.alarms.onAlarm.addListener(async alarm => {
         await fetchAndUpdateRules();
     }
 });
-
 chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === 'sync' && changes.userWhitelist) {
         currentWhitelist = (changes.userWhitelist.newValue || []).map(normalizeDomain);
     }
 });
-
 chrome.storage.sync.get('userWhitelist', (data) => {
     currentWhitelist = (data.userWhitelist || []).map(normalizeDomain);
 });
@@ -104,15 +99,15 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
     const tabId = sender.tab?.id;
     const url = message.url;
     if (!tabId || !url) return;
+    const domain = normalizeUrlForBlocklist(url).split('/')[0];
 
     if (message.action === 'threatDetected') {
-        await chrome.storage.local.set({
-            [`threats_${tabId}`]: {
-                status: 'warning',
-                url,
-                threats: message.threats
-            }
-        });
+        // Si ce n'est pas déjà marqué "phishing", ajoute-le dans threats (pour garantir la robustesse de l'affichage)
+        let threats = Array.isArray(message.threats) ? message.threats.slice() : [];
+        if (!threats.some(t => t.toLowerCase().includes("phishing"))) {
+            threats.unshift("phishing");
+        }
+        await saveThreat(tabId, url, domain, threats, 'Détection automatique');
         await chrome.action.setIcon({ tabId, path: ICON_PATHS.warning });
     }
 
@@ -121,7 +116,14 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
             [`threats_${tabId}`]: {
                 status: 'safe',
                 url,
-                threats: []
+                threats: [],
+                domain
+            },
+            [`threats_${domain}`]: {
+                status: 'safe',
+                url,
+                threats: [],
+                domain
             }
         });
         await chrome.action.setIcon({ tabId, path: ICON_PATHS.safe });
@@ -131,8 +133,12 @@ chrome.runtime.onMessage.addListener(async (message, sender) => {
 // --- Vérifie si l'URL figure dans la blocklist phishing locale ---
 function checkLocalPhishingBlocklist(url) {
     if (!PHISHING_BLOCKLIST.length) return false;
-    // Vérifie si l'URL commence par une URL de la liste
-    return PHISHING_BLOCKLIST.some(phishUrl => url.startsWith(phishUrl));
+    const normUrl = normalizeUrlForBlocklist(url);
+    const baseDomain = normUrl.split('/')[0];
+    return PHISHING_BLOCKLIST.some(phishUrl => {
+        const normPhish = normalizeUrlForBlocklist(phishUrl);
+        return normPhish === baseDomain || normPhish === normUrl;
+    });
 }
 
 // --- Analyse heuristique simple ---
@@ -238,67 +244,27 @@ async function analyzeUrlWithSafeProxy(tabId, url) {
     const { enableThreats = true } = await chrome.storage.sync.get("enableThreats");
     if (!enableThreats) return;
 
-<<<<<<< HEAD
     // 1. Google Safe Browsing Proxy
     const isDangerousGSB = await checkGoogleSafeBrowseProxy(url);
     if (isDangerousGSB) {
-        await blockPage(tabId, domain, 'Phishing détecté (Google Safe Browsing)');
+        await saveThreat(tabId, url, domain, ['phishing', 'google_safe_browsing'], 'Phishing détecté (Google Safe Browsing)');
+        await blockPage(tabId, domain, 'Phishing détecté (Google Safe Browsing)', url);
         return;
-=======
-    // --- MODIFIE ICI ---
-    try {
-        const response = await fetch(SAFE_PROXY_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-        });
-        const data = await response.json();
-
-        if (data.matches && data.matches.length > 0) {
-            // On extrait les types de menaces (ex : PHISHING, MALWARE…)
-            const threats = data.matches.map(m => m.threatType.toLowerCase());
-            const hasPhishing = threats.includes("phishing");
-
-            // Enregistre tout dans le storage !
-            await chrome.storage.local.set({
-                [`threats_${tabId}`]: {
-                    status: 'dangerous',
-                    url,
-                    threats
-                }
-            });
-
-            // Mets à jour l’icône
-            await chrome.action.setIcon({ tabId, path: ICON_PATHS.dangerous });
-
-            // (Optionnel) bloque la page
-            // await blockPage(tabId, domain, 'Site malveillant selon Google');
-        } else {
-            await chrome.storage.local.set({
-                [`threats_${tabId}`]: {
-                    status: 'safe',
-                    url,
-                    threats: []
-                }
-            });
-            await chrome.action.setIcon({ tabId, path: ICON_PATHS.safe });
-        }
-    } catch (error) {
-        console.error("[SafeBrowse AI] Erreur communication proxy Safe Browsing :", error);
->>>>>>> 3065daac2802cffa773d60b355b43ab495474bc9
     }
 
     // 2. Blocklist locale phishing
     const isDangerousPhishBlocklist = checkLocalPhishingBlocklist(url);
     if (isDangerousPhishBlocklist) {
-        await blockPage(tabId, domain, 'Phishing détecté (blocklist locale)');
+        await saveThreat(tabId, url, domain, ['phishing', 'phishing_blocklist'], 'Phishing détecté (blocklist locale)');
+        await blockPage(tabId, domain, 'Phishing détecté (blocklist locale)', url);
         return;
     }
 
     // 3. Heuristique
     const isDangerousHeur = checkHeuristic(url);
     if (isDangerousHeur) {
-        await blockPage(tabId, domain, 'Phishing détecté (Analyse heuristique)');
+        await saveThreat(tabId, url, domain, ['phishing', 'heuristic'], 'Phishing détecté (Analyse heuristique)');
+        await blockPage(tabId, domain, 'Phishing détecté (Analyse heuristique)', url);
         return;
     }
 
@@ -306,10 +272,42 @@ async function analyzeUrlWithSafeProxy(tabId, url) {
     await updateUi(tabId, 'safe', domain);
 }
 
-async function blockPage(tabId, domain, reason) {
+// --- Sauvegarde cohérente des menaces ---
+async function saveThreat(tabId, url, domain, threats, reason) {
+    // Toujours inclure "phishing" en premier dans threats
+    if (!threats.some(t => t.toLowerCase().includes("phishing"))) {
+        threats.unshift("phishing");
+    }
+    const normDomain = normalizeUrlForBlocklist(domain).split('/')[0];
+    const threatObj = {
+        status: 'dangerous',
+        url,
+        threats,
+        domain: normDomain,
+        reason
+    };
+    await chrome.storage.local.set({
+        [`threats_${tabId}`]: threatObj,
+        [`threats_${normDomain}`]: threatObj
+    });
+}
+
+async function blockPage(tabId, domain, reason, url = null) {
     await updateUi(tabId, 'dangerous', domain);
-    const blockingUrl = chrome.runtime.getURL(`pages/blocking_page.html?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}`);
-    chrome.tabs.update(tabId, { url: blockingUrl });
+    const normDomain = normalizeUrlForBlocklist(domain).split('/')[0];
+    const blockingUrl = chrome.runtime.getURL(`pages/phish_block.html?site=${encodeURIComponent(normDomain)}&reason=${encodeURIComponent(reason)}`);
+    await chrome.storage.local.set({
+        [`threats_${normDomain}`]: {
+            status: 'dangerous',
+            url: url || domain,
+            threats: ['phishing'],
+            domain: normDomain,
+            reason
+        }
+    });
+    if (tabId !== undefined) {
+        chrome.tabs.update(tabId, { url: blockingUrl });
+    }
 }
 
 async function updateUi(tabId, status, domain) {
@@ -324,7 +322,6 @@ async function updateUi(tabId, status, domain) {
     }
 }
 
-// --- Fonction pour communiquer avec le proxy Google Safe Browsing ---
 async function checkGoogleSafeBrowseProxy(url) {
     try {
         const response = await fetch(SAFE_PROXY_URL, {
