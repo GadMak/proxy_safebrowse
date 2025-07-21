@@ -1,0 +1,32 @@
+/* Bannière pub générique */
+iframe[src*="ads"],
+iframe[src*="adservice"],
+iframe[src*="doubleclick"],
+iframe[src*="googlesyndication"],
+iframe[src*="adform"],
+iframe[src*="adnxs"],
+iframe[src*="taboola"],
+iframe[src*="outbrain"],
+iframe[src*="zedo"],
+iframe[src*="revcontent"],
+iframe[src*="adsterra"],
+iframe[src*="popads"],
+iframe[src*="mgid"],
+iframe[src*="adblade"],
+iframe[src*="propellerads"],
+iframe[src*="rubiconproject"],
+iframe[src*="advertising"],
+div[class*="adsense"],
+div[class*="sponsor"],
+div[class*="sponsored"],
+div[id*="sponsored"]
+{
+  display: none !important;
+  visibility: hidden !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}

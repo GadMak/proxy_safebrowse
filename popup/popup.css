@@ -1,39 +1,43 @@
 /* popup/popup.css */
 
-/* Variables CSS pour faciliter les changements de thème */
+/* ============ VARIABLES GLOBALES ============ */
 :root {
-    --primary-color: #4CAF50; /* Vert pour sûr */
-    --danger-color: #F44336;  /* Rouge pour dangereux */
-    --warning-color: #FFC107; /* Jaune pour avertissement */
-    --info-color: #2196F3;    /* Bleu pour infos/neutre */
+    --primary-color: #4CAF50;
+    --danger-color: #F44336;
+    --warning-color: #FFC107;
+    --info-color: #2196F3;
+    --phishing-color: #c82333;
+    --phishing-bg: #ffe5e5;
     --text-color-dark: #333;
     --text-color-light: #fff;
     --background-light: #f8f9fa;
-    --card-background: #ffffff;
+    --card-background: #fff;
     --border-color: #e0e0e0;
-    --button-primary-bg: #2196F3; /* Bleu pour bouton principal */
+    --button-primary-bg: #2196F3;
     --button-primary-hover: #1976D2;
-    --button-secondary-bg: #6c757d; /* Gris pour bouton secondaire */
+    --button-secondary-bg: #6c757d;
     --button-secondary-hover: #5a6268;
-    --button-tertiary-bg: #f0f0f0; /* Gris clair pour bouton tertiaire */
+    --button-tertiary-bg: #f0f0f0;
     --button-tertiary-hover: #e0e0e0;
 }
 
+/* ============ BASE ============ */
 body {
     font-family: 'Poppins', sans-serif;
-    width: 320px; /* Largeur fixe pour le popup */
+    width: 340px;
     padding: 0;
     margin: 0;
     background-color: var(--background-light);
     color: var(--text-color-dark);
-    overflow-x: hidden; /* Empêche le défilement horizontal */
+    overflow-x: hidden;
 }
 
 .container {
-    padding: 20px;
+    padding: 18px 16px 20px 16px;
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Espacement entre les sections */
+    gap: 18px;
+    min-height: 100vh;
 }
 
 .header {
@@ -41,283 +45,199 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 .logo {
-    width: 32px; /* Taille du logo dans le header */
-    height: 32px;
+    width: 38px;
+    height: 38px;
 }
 
 .title {
-    font-size: 1.5em;
+    font-size: 1.4em;
     font-weight: 700;
     color: var(--text-color-dark);
     margin: 0;
+    letter-spacing: 0.5px;
 }
 
-/* Status Card */
+/* ============ STATUS CARD ============ */
 .status-card {
-    background-color: var(--card-background);
-    border-radius: 12px;
-    padding: 20px;
+    background: var(--card-background);
+    border-radius: 14px;
+    padding: 22px 10px 17px 10px;
     text-align: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.09);
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    transition: background-color 0.3s ease, transform 0.2s ease;
+    min-height: 110px;
+    transition: background 0.3s;
+    position: relative;
 }
 
 .status-icon-container {
-    width: 60px;
-    height: 60px;
+    width: 62px;
+    height: 62px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 5px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 6px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.10);
+    background: #f3f3f3;
+    transition: background 0.25s;
 }
 
 .status-icon {
-    font-size: 2.2em;
-    color: var(--text-color-light); /* Couleur des icônes dans les cercles */
+    font-size: 2.35em;
+    color: var(--text-color-light);
+    transition: color 0.2s;
 }
 
-/* Couleurs spécifiques aux statuts */
-.status-safe-icon-container { background-color: var(--primary-color); }
-.status-safe-icon { color: var(--text-color-light); } /* Icône blanche */
-.status-safe-message { color: var(--primary-color); font-weight: 600; }
+/* Statuts dynamiques */
+.status-safe-icon-container { background: var(--primary-color); }
+.status-dangerous-icon-container { background: var(--danger-color); }
+.status-warning-icon-container { background: var(--warning-color); }
+.status-whitelisted-icon-container { background: var(--info-color); }
+.status-phishing-icon-container { background: var(--phishing-color); }
 
-.status-dangerous-icon-container { background-color: var(--danger-color); }
+.status-safe-icon { color: var(--text-color-light); }
 .status-dangerous-icon { color: var(--text-color-light); }
-.status-dangerous-message { color: var(--danger-color); font-weight: 600; }
-
-.status-warning-icon-container { background-color: var(--warning-color); }
-.status-warning-icon { color: var(--text-color-dark); } /* Icône noire sur jaune */
-.status-warning-message { color: var(--warning-color); font-weight: 600; }
-
-.status-whitelisted-icon-container { background-color: var(--info-color); }
+.status-warning-icon { color: #222; }
 .status-whitelisted-icon { color: var(--text-color-light); }
-.status-whitelisted-message { color: var(--info-color); font-weight: 600; }
+.status-phishing-icon { color: var(--text-color-light); }
 
 .status-message {
-    font-size: 1.1em;
+    font-size: 1.13em;
     font-weight: 600;
     margin: 0;
+    transition: color 0.2s;
+}
+.status-phishing-card {
+    background: linear-gradient(135deg, #fff 30%, var(--phishing-bg) 100%);
+    color: var(--phishing-color);
+    border: 2px solid var(--phishing-color);
+    box-shadow: 0 0 10px #c8233380;
+}
+.status-dangerous-card {
+    background: linear-gradient(135deg, #fff 30%, #ffeaea 100%);
+    border: 2px solid var(--danger-color);
+}
+.status-safe-card {
+    background: linear-gradient(135deg, #fff 40%, #e7f9ec 100%);
+    border: 2px solid var(--primary-color);
+}
+.status-warning-card {
+    background: linear-gradient(135deg, #fff 40%, #fffbe7 100%);
+    border: 2px solid var(--warning-color);
+}
+.status-whitelisted-card {
+    background: linear-gradient(135deg, #fff 40%, #e7f1fd 100%);
+    border: 2px solid var(--info-color);
 }
 
 .current-url {
     font-size: 0.85em;
-    color: #666;
-    word-break: break-all; /* Empêche le débordement de l'URL */
-    margin-top: 5px;
+    color: #777;
+    word-break: break-all;
+    margin-top: 2px;
 }
 
-.threat-list {
-    list-style: none; /* Supprime les puces par défaut */
+/* ============ THREAT SUMMARY ============ */
+.threat-summary {
+    background: var(--card-background);
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    border-left: 5px solid var(--info-color);
+}
+.threat-summary h2 {
+    font-size: 1.07em;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: var(--info-color);
+}
+.threat-summary-list {
+    list-style: none;
     padding: 0;
     margin: 0;
 }
-
-.threat-list li {
-    font-size: 0.9em;
-    color: #555;
-    margin-bottom: 8px;
-    position: relative;
-    padding-left: 20px; /* Espace pour l'icône */
+.threat-summary-list li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.96em;
+    padding: 6px 0 3px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.threat-summary-list li:last-child { border-bottom: none; }
+.threat-summary-list strong {
+    font-weight: 700;
+    color: var(--text-color-dark);
 }
 
-.threat-list li:last-child {
-    margin-bottom: 0;
+/* ============ DÉTAILS / ALERTES ============ */
+.view-details-container {
+    margin-top: 14px;
+    text-align: center;
+    animation: fadeSlideIn 0.4s;
+    font-size: 1em;
+    font-weight: 500;
 }
 
-.threat-list li::before {
-    content: "\f06a"; /* Font Awesome icon pour avertissement */
-    font-family: "Font Awesome 5 Free"; /* ou 6 Free selon votre version */
-    font-weight: 900;
-    color: var(--danger-color);
-    position: absolute;
-    left: 0;
-    top: 2px;
-    font-size: 0.9em;
-}
-
-
-/* Actions Buttons */
+/* ============ BOUTONS ============ */
 .actions {
     display: flex;
     flex-direction: column;
-    gap: 10px; /* Espace entre les boutons */
+    gap: 9px;
+    margin-top: 7px;
 }
 
 .btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    padding: 12px 15px;
+    gap: 9px;
+    padding: 12px 0;
     border: none;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 1.03em;
     font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+    transition: background 0.18s, transform 0.1s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
 }
-
-.btn i {
-    font-size: 1em;
-}
+.btn i { font-size: 1.1em; }
 
 .btn-primary {
-    background-color: var(--button-primary-bg);
+    background: var(--button-primary-bg);
     color: var(--text-color-light);
 }
-
-.btn-primary:hover {
-    background-color: var(--button-primary-hover);
-    transform: translateY(-1px);
-}
+.btn-primary:hover { background: var(--button-primary-hover); }
 
 .btn-secondary {
-    background-color: var(--button-secondary-bg);
+    background: var(--button-secondary-bg);
     color: var(--text-color-light);
 }
-
-.btn-secondary:hover {
-    background-color: var(--button-secondary-hover);
-    transform: translateY(-1px);
-}
+.btn-secondary:hover { background: var(--button-secondary-hover); }
 
 .btn-tertiary {
-    background-color: var(--button-tertiary-bg);
+    background: var(--button-tertiary-bg);
     color: var(--text-color-dark);
     border: 1px solid var(--border-color);
 }
+.btn-tertiary:hover { background: var(--button-tertiary-hover); }
 
-.btn-tertiary:hover {
-    background-color: var(--button-tertiary-hover);
-    transform: translateY(-1px);
-}
-
-/* Styles pour les icônes de statut */
-.status-safe-icon { content: "\f058"; } /* check-circle */
-.status-dangerous-icon { content: "\f06a"; } /* exclamation-triangle ou circle-exclamation */
-.status-warning-icon { content: "\f071"; } /* exclamation-triangle */
-.status-whitelisted-icon { content: "\f05a"; } /* info-circle */
-
-/* Styles dynamiques JavaScript (ajoutés/retirés par popup.js) */
-.icon-safe {
-    background-color: var(--primary-color);
-}
-.icon-danger {
-    background-color: var(--danger-color);
-}
-.icon-warning {
-    background-color: var(--warning-color);
-}
-.icon-whitelisted {
-    background-color: var(--info-color);
-}
-/* Résumé de l'analyse */
-.threat-summary {
-    background-color: var(--card-background);
-    border-radius: 12px;
-    padding: 15px 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-    border-left: 5px solid var(--info-color);
-}
-
-.threat-summary h2 {
-    font-size: 1.1em;
-    font-weight: 600;
-    margin: 0 0 10px;
-    color: var(--info-color);
-}
-
-.threat-summary-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.threat-summary-list li {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.95em;
-    padding: 5px 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.threat-summary-list li:last-child {
-    border-bottom: none;
-}
-
-.threat-summary-list strong {
-    font-weight: 600;
-    color: var(--text-color-dark);
-}
-/* ----------- Lien vers les détails des menaces (stylé & responsive) ----------- */
-.view-details-container {
-    margin-top: 15px;
-    text-align: center;
-    animation: fadeSlideIn 0.4s ease-in-out;
-}
-
-.view-details-container a {
-    display: inline-block;
-    background-color: #e8f0ff;
-    color: #007bff;
-    font-weight: 600;
-    text-decoration: none;
-    padding: 10px 15px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.15);
-    font-size: 0.95em;
-}
-
-.view-details-container a:hover {
-    background-color: #d0e3ff;
-    color: #0056b3;
-    text-decoration: none;
-    transform: translateY(-1px);
-}
-
-.view-details-container a i {
-    margin-right: 6px;
-}
-
-/* Animation douce à l'affichage */
+/* ============ ANIMATION ============ */
 @keyframes fadeSlideIn {
-    0% {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    100% {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
-<<<<<<< HEAD
 
-=======
->>>>>>> 3065daac2802cffa773d60b355b43ab495474bc9
-.status-phishing-card {
-    background: linear-gradient(135deg, #ff0000 30%, #ffe5e5 100%);
-    color: #c82333;
-    border: 2px solid #c82333;
-    box-shadow: 0 0 10px #c8233380;
+/* ============ RESPONSIVE PETIT ÉCRAN ============ */
+@media (max-width: 360px) {
+    .container { padding: 10px 4px 12px 4px; }
+    .status-card { padding: 14px 3px 11px 3px; }
+    .threat-summary { padding: 8px 4px; }
 }
-.status-phishing-icon-container {
-    background: #fff5f5;
-    border-radius: 100px;
-    padding: 10px;
-}
-<<<<<<< HEAD
-
-=======
->>>>>>> 3065daac2802cffa773d60b355b43ab495474bc9

@@ -103,7 +103,7 @@ body {
 .blocked-url {
     font-size: 1.2em;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--danger-color);
     word-break: break-all;
     margin: 10px 0;
     padding: 5px 10px;

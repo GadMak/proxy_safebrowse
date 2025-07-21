@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // --- Références DOM ---
     const statusCard = document.getElementById('statusCard');
     const statusIcon = document.getElementById('statusIcon');
     const statusMessage = document.getElementById('statusMessage');
@@ -15,136 +16,104 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let activeTab, threatData = null, siteToCheck = null;
 
+    // --- UTIL ---
     function normalizeDomain(domain) {
-        return domain.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '').toLowerCase();
-    }
-
-    async function getThreatData(tabId, url) {
-        const allThreats = await chrome.storage.local.get(null);
-        let normDomain = url ? normalizeDomain(url).split('/')[0] : null;
-
-        // 1. Cherche par tabId
-        if (tabId && allThreats[`threats_${tabId}`]) {
-            return allThreats[`threats_${tabId}`];
-        }
-        // 2. Cherche par domaine pur
-        if (normDomain && allThreats[`threats_${normDomain}`]) {
-            return allThreats[`threats_${normDomain}`];
-        }
-        // 3. Recherche large (optionnelle)
-        if (normDomain) {
-            const found = Object.values(allThreats).find(val =>
-                val.url && val.url.includes(normDomain)
-            );
-            if (found) return found;
-        }
-        return null;
+        return domain.replace(/^https?:\/\//i, '')
+            .replace(/^www\./i, '')
+            .replace(/\/.*$/, '')
+            .toLowerCase();
     }
 
     try {
+        // 1. Onglet actif
         const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
         activeTab = tabs[0];
         let urlToCheck = activeTab?.url;
 
-        // Cas 1 : Page de blocage SafeBrowse
+        // 2. Page de blocage ou page normale ?
         if (urlToCheck && urlToCheck.startsWith("chrome-extension://") && urlToCheck.includes("phish_block")) {
             const params = new URLSearchParams(new URL(urlToCheck).search);
-            siteToCheck = params.get("site");
-            currentUrlDisplay.textContent = siteToCheck || urlToCheck;
+            siteToCheck = params.get("site") || urlToCheck;
+            currentUrlDisplay.textContent = siteToCheck;
         } else if (urlToCheck) {
             siteToCheck = urlToCheck;
             currentUrlDisplay.textContent = urlToCheck;
         }
 
-        // Recherche intelligente
-        let normDomain = siteToCheck ? normalizeDomain(siteToCheck).split('/')[0] : null;
-        threatData = await getThreatData(activeTab?.id, siteToCheck);
+        // 3. Lecture du statut (clé threats_<tabId>)
+        let threatsKey = activeTab?.id ? `threats_${activeTab.id}` : null;
+        let threatObj = threatsKey ? (await chrome.storage.local.get(threatsKey))[threatsKey] : null;
+        threatData = threatObj || null;
 
-        // ---- AFFICHAGE DU RÉSUMÉ ----
+        // 4. Affichage du résumé d’analyse
         if (threatData) {
-            let { status, threats = [] } = threatData;
+            const threats = Array.isArray(threatData.threats) ? threatData.threats.map(t => t.toLowerCase()) : [];
+            const status = threatData.status || "safe";
+            const ads = threatData.adsCount !== undefined ? threatData.adsCount : (threatData.ads || 0);
+            const isVuln = threats.includes("vulnerability") || threats.includes("vulnérabilité") || threatData.hasVulnerabilities === true;
+            const isPhishing = threats.includes("phishing");
+            const isThreat = (status === 'dangerous') && !isPhishing && !isVuln;
+            const hasAds = ads && ads > 0;
 
-            // -------- DÉTECTION ULTRA-FIABLE ----------
-            // On considère "phishing" détecté si threats contient le mot "phishing" (sous n'importe quelle forme)
-            const hasPhishing = (threats || []).some(t =>
-                t.toLowerCase().includes("phishing")
-            );
-            // Menace si "dangerous" ou "warning"
-            const hasThreats = status === 'dangerous' || status === 'warning';
-            const hasVulnerabilities = (threats || []).some(t =>
-                t.toLowerCase().includes("xss") ||
-                t.toLowerCase().includes("clé sensible") ||
-                t.toLowerCase().includes("vulnérabilité")
-            );
-            const adCount = 0;
+            phishingStatus.textContent = isPhishing ? "Oui" : "Non";
+            threatsStatus.textContent = (isPhishing || isThreat) ? "Oui" : "Non";
+            vulnerabilitiesStatus.textContent = isVuln ? "Oui" : "Non";
+            adsCount.textContent = hasAds ? ads.toString() : "0";
 
-            phishingStatus.textContent = hasPhishing ? "Oui" : "Non";
-            threatsStatus.textContent = hasThreats ? "Oui" : "Non";
-            vulnerabilitiesStatus.textContent = hasVulnerabilities ? "Oui" : "Non";
-            adsCount.textContent = adCount.toString();
-
-            // Affichage visuel
+            // Affichage de l’icône et couleur
             statusCard.className = 'status-card';
             statusIcon.parentElement.className = 'status-icon-container';
+            statusMessage.style.color = '';
+            statusMessage.style.fontWeight = 'bold';
 
-            if (hasPhishing) {
-                statusCard.className = 'status-card status-phishing-card';
+            if (isPhishing) {
+                statusCard.classList.add('status-dangerous-card');
                 statusIcon.className = 'fas fa-skull-crossbones status-icon';
-                statusIcon.parentElement.className = 'status-phishing-icon-container';
+                statusIcon.parentElement.classList.add('status-dangerous-icon-container');
                 statusMessage.textContent = "🚨 ATTENTION : site de phishing détecté !";
-                statusMessage.style.fontWeight = 'bold';
                 statusMessage.style.color = '#c82333';
-
-                if (viewDetailsContainer) {
-                    viewDetailsContainer.style.display = 'block';
-                    viewDetailsContainer.innerHTML = `<span style="color:#c82333;font-weight:bold;">Ce site a été signalé comme site de phishing. Évitez d’entrer des informations personnelles !</span>`;
-                }
-                return;
+            } else if (isThreat) {
+                statusCard.classList.add('status-warning-card');
+                statusIcon.className = 'fas fa-exclamation-triangle status-icon';
+                statusIcon.parentElement.classList.add('status-warning-icon-container');
+                statusMessage.textContent = "⚠️ Menaces sévères détectées.";
+                statusMessage.style.color = '#d35400';
+            } else if (isVuln) {
+                statusCard.classList.add('status-warning-card');
+                statusIcon.className = 'fas fa-bug status-icon';
+                statusIcon.parentElement.classList.add('status-warning-icon-container');
+                statusMessage.textContent = "⚠️ Vulnérabilités détectées.";
+                statusMessage.style.color = '#d35400';
+            } else if (hasAds) {
+                statusCard.classList.add('status-warning-card');
+                statusIcon.className = 'fas fa-ad status-icon';
+                statusIcon.parentElement.classList.add('status-warning-icon-container');
+                statusMessage.textContent = "⚠️ Publicités détectées sur la page.";
+                statusMessage.style.color = '#e67e22';
+            } else if (status === 'whitelisted') {
+                statusCard.classList.add('status-whitelisted-card');
+                statusIcon.className = 'fas fa-shield-alt status-icon';
+                statusIcon.parentElement.classList.add('status-whitelisted-icon-container');
+                statusMessage.textContent = "🔐 Ce site est dans la liste blanche.";
+                statusMessage.style.color = '#2196F3';
+            } else {
+                statusCard.classList.add('status-safe-card');
+                statusIcon.className = 'fas fa-check-circle status-icon';
+                statusIcon.parentElement.classList.add('status-safe-icon-container');
+                statusMessage.textContent = "✅ Cette page semble sûre.";
+                statusMessage.style.color = '#4CAF50';
             }
-
-            switch (status) {
-                case 'safe':
-                    statusCard.classList.add('status-safe-card');
-                    statusIcon.className = 'fas fa-check-circle status-icon';
-                    statusIcon.parentElement.classList.add('status-safe-icon-container');
-                    statusMessage.textContent = "✅ Cette page semble sûre.";
-                    break;
-                case 'dangerous':
-                    statusCard.classList.add('status-dangerous-card');
-                    statusIcon.className = 'fas fa-exclamation-triangle status-icon';
-                    statusIcon.parentElement.classList.add('status-dangerous-icon-container');
-                    statusMessage.textContent = "🛑 Menaces sévères détectées.";
-                    break;
-                case 'warning':
-                    statusCard.classList.add('status-warning-card');
-                    statusIcon.className = 'fas fa-exclamation-circle status-icon';
-                    statusIcon.parentElement.classList.add('status-warning-icon-container');
-                    statusMessage.textContent = "⚠️ Contenu suspect détecté.";
-                    break;
-                case 'whitelisted':
-                    statusCard.classList.add('status-whitelisted-card');
-                    statusIcon.className = 'fas fa-shield-alt status-icon';
-                    statusIcon.parentElement.classList.add('status-whitelisted-icon-container');
-                    statusMessage.textContent = "🔐 Ce site est dans la liste blanche.";
-                    break;
-                default:
-                    statusCard.classList.add('status-info-card');
-                    statusIcon.className = 'fas fa-question-circle status-icon';
-                    statusIcon.parentElement.classList.add('status-info-icon-container');
-                    statusMessage.textContent = "Statut inconnu.";
-            }
-
-            if (viewDetailsContainer) {
-                viewDetailsContainer.style.display = 'none';
-            }
+            if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
         } else {
-            // Aucune donnée pour ce site : état analyse en cours
-            statusMessage.textContent = "⏳ Analyse en cours...";
+            // Analyse en cours
+            statusCard.className = 'status-card';
             statusIcon.className = 'fas fa-spinner fa-spin status-icon';
+            statusMessage.textContent = "⏳ Analyse en cours...";
             phishingStatus.textContent = "-";
             threatsStatus.textContent = "-";
             vulnerabilitiesStatus.textContent = "-";
             adsCount.textContent = "0";
+            if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
         }
     } catch (error) {
         console.error("Erreur récupération popup :", error);
@@ -153,14 +122,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         threatsStatus.textContent = "-";
         vulnerabilitiesStatus.textContent = "-";
         adsCount.textContent = "0";
+        if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
     }
 
+    // --- BOUTON "AJOUTER À LA LISTE BLANCHE" ---
     whitelistBtn.addEventListener('click', async () => {
         if (!siteToCheck) return;
         let domain = siteToCheck;
         if (domain.includes("/")) {
-            domain = domain.split("/")[0];
+            try {
+                domain = (new URL(domain)).hostname || domain;
+            } catch {
+                domain = domain.split("/")[0];
+            }
         }
+        domain = normalizeDomain(domain);
         const { userWhitelist } = await chrome.storage.sync.get("userWhitelist");
         const updatedList = Array.isArray(userWhitelist) ? [...new Set([...userWhitelist, domain])] : [domain];
         await chrome.storage.sync.set({ userWhitelist: updatedList });
@@ -168,10 +144,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (activeTab?.id) chrome.tabs.reload(activeTab.id);
     });
 
+    // --- BOUTON SIGNALER ---
     reportBtn.addEventListener('click', () => {
         alert("🛠️ Fonction de signalement à implémenter.");
     });
 
+    // --- BOUTON OPTIONS ---
     optionsBtn.addEventListener('click', () => {
         chrome.runtime.openOptionsPage();
     });

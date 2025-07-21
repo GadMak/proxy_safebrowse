@@ -9,47 +9,49 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <img src="../images/icon48.png" alt="SafeBrowse AI Logo" class="logo">
-            <h1 class="title">SafeBrowse AI</h1>
+    <div class="container" role="main">
+        <!-- HEADER -->
+        <header class="header" aria-label="SafeBrowse AI">
+            <img src="../images/icon48.png" alt="Logo SafeBrowse AI" class="logo" width="40" height="40" />
+            <h1 class="title" style="font-size: 1.5em;">SafeBrowse AI</h1>
         </header>
 
+        <!-- ÉTAT & ICÔNE -->
         <div class="status-card" id="statusCard">
-            <div class="status-icon-container">
-                <i id="statusIcon" class="fas fa-check-circle status-safe-icon"></i>
+            <div class="status-icon-container" id="statusIconContainer">
+                <i id="statusIcon" class="fas fa-check-circle status-icon" aria-hidden="true"></i>
             </div>
-            <p id="statusMessage" class="status-message">Vérification en cours...</p>
-            <p id="currentUrl" class="current-url"></p>
+            <p id="statusMessage" class="status-message" role="status">Vérification en cours...</p>
+            <p id="currentUrl" class="current-url" title="URL analysée"></p>
         </div>
 
-        <!-- Résumé de l'analyse -->
-        <div class="threat-summary" id="threatSummary">
+        <!-- RÉSUMÉ DE L'ANALYSE -->
+        <section class="threat-summary" id="threatSummary" aria-label="Résumé de l'analyse">
             <h2>Résumé de l'analyse :</h2>
             <ul class="threat-summary-list">
-                <li>Détection de phishing : <strong id="phishing-status">-</strong></li>
-                <li>Détection de menaces : <strong id="threats-status">-</strong></li>
-                <li>Détection de vulnérabilités web : <strong id="vulnerabilities-status">-</strong></li>
-                <li>Nombre de pubs détectées : <strong id="ads-count">0</strong></li>
+                <li>Détection de phishing&nbsp;: <strong id="phishing-status">-</strong></li>
+                <li>Détection de menaces&nbsp;: <strong id="threats-status">-</strong></li>
+                <li>Détection de vulnérabilités web&nbsp;: <strong id="vulnerabilities-status">-</strong></li>
+                <li>Nombre de pubs détectées&nbsp;: <strong id="ads-count">0</strong></li>
             </ul>
-        </div>
+        </section>
 
-        <!-- Lien dynamique vers détails -->
+        <!-- Message dynamique de détail/alerte -->
         <div id="viewDetailsContainer" class="view-details-container" style="display: none;"></div>
 
-        <div class="actions">
-            <button id="whitelistBtn" class="btn btn-primary">
+        <!-- ACTIONS -->
+        <nav class="actions" aria-label="Actions">
+            <button id="whitelistBtn" class="btn btn-primary" type="button">
                 <i class="fas fa-shield-alt"></i> Ajouter à la liste blanche
             </button>
-            <button id="reportBtn" class="btn btn-secondary">
+            <button id="reportBtn" class="btn btn-secondary" type="button">
                 <i class="fas fa-flag"></i> Signaler un site
             </button>
-            <button id="optionsBtn" class="btn btn-tertiary">
+            <button id="optionsBtn" class="btn btn-tertiary" type="button">
                 <i class="fas fa-cogs"></i> Paramètres
             </button>
-        </div>
+        </nav>
     </div>
-
     <script src="popup.js"></script>
 </body>
 </html>

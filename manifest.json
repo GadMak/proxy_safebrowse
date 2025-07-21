@@ -30,8 +30,14 @@
   "content_scripts": [
     {
       "matches": ["http://*/*", "https://*/*"],
-      "js": ["content_scripts/content_analyzer.js"],
-      "css": ["content_scripts/content_styles.css"],
+      "js": [
+        "content_scripts/content_analyzer.js",
+        "content_scripts/extract_features.js"
+      ],
+      
+      "css": ["content_scripts/content_styles.css",
+              "content_scripts/adblock_cosmetic.css"],
+
       "run_at": "document_idle"
     }
   ],
@@ -44,12 +50,19 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "content_scripts/extract_features.js",
         "pages/threats.html",
         "pages/blocking_page.html",
         "pages/phish_block.html",
         "assets/adult_blocklist.txt",
         "assets/phishing_blocklist.txt",
-        "images/icon128.png"
+        "assets/adblock_list",
+        "images/icon128.png",
+        "images/icon_safe_16.png",
+        "images/icon_safe_32.png",
+        "images/icon_danger_16.png",
+        "images/icon_danger_32.png",
+        "images/icon_whitelisted_16.png"
       ],
       "matches": ["<all_urls>"]
     }
@@ -63,10 +76,21 @@
     "notifications",
     "declarativeNetRequest",
     "declarativeNetRequestWithHostAccess",
+    "declarativeNetRequestWithDynamicRules",
     "activeTab"
   ],
 
   "host_permissions": [
     "<all_urls>"
-  ]
+  ],
+
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "rules_adblock",
+        "enabled": true,
+        "path": "assets/rules_adblock.json"
+      }
+    ]
+  }
 }
