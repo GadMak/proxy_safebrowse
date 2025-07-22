@@ -113,6 +113,12 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
     }
 });
 
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.action === "adsCount") {
+        chrome.storage.local.set({ adsBlocked: msg.value });
+    }
+});
+
 // --- Analyse déclenchée à chaque navigation ---
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     if (changeInfo.status === 'complete' && tab.url && tab.url.startsWith('http')) {
@@ -156,7 +162,7 @@ async function analyzeUrlAI(tabId, url) {
         status = "dangerous";
         reason = "Phishing détecté (blocklist locale)";
         await setAnalysisStatus(tabId, status, url, domain, threats, reason);
-        await blockPage(tabId, domain, reason, url);
+        await blockPage(tabId, domain, reason, url, "phishing"); // <--- Ajouté "phishing"
         return;
     }
     // Blocage immédiat sur blocklist adulte
@@ -165,7 +171,7 @@ async function analyzeUrlAI(tabId, url) {
         status = "dangerous";
         reason = "Site adulte détecté (blocklist locale)";
         await setAnalysisStatus(tabId, status, url, domain, threats, reason);
-        await blockPage(tabId, domain, reason, url);
+        await blockPage(tabId, domain, reason, url, "adult"); // <--- Ajouté "adult"
         return;
     }
 
@@ -184,7 +190,7 @@ async function analyzeUrlAI(tabId, url) {
         status = "dangerous";
         reason = "Phishing détecté (Google Safe Browsing)";
         await setAnalysisStatus(tabId, status, url, domain, threats, reason);
-        await blockPage(tabId, domain, reason, url);
+        await blockPage(tabId, domain, reason, url, "phishing"); // <--- Ajouté "phishing"
         return;
     }
 
@@ -207,7 +213,7 @@ async function analyzeUrlAI(tabId, url) {
             status = "dangerous";
             reason = "Phishing détecté (IA ML)";
             await setAnalysisStatus(tabId, status, url, domain, threats, reason);
-            await blockPage(tabId, domain, reason, url);
+            await blockPage(tabId, domain, reason, url, "phishing"); // <--- Ajouté "phishing"
             return;
         }
         if (mlResult.has_vuln) {
@@ -281,10 +287,32 @@ async function clearThreat(tabId) {
     await chrome.storage.local.remove([`threats_${tabId}`]);
 }
 
-async function blockPage(tabId, domain, reason, url = null) {
-    await chrome.tabs.update(tabId, {
-        url: chrome.runtime.getURL(`pages/phish_block.html?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}`)
+async function blockPage(tabId, domain, reason, url = null, threatType = "phishing") {
+    let page = "phish_block.html";
+    if (threatType === "adult") {
+        page = "blocking_page.html";
+    } else if (threatType === "phishing") {
+        page = "phish_block.html";
+    } else {
+        page = "blocking_page.html";
+    }
+    if (url) {
+        await chrome.tabs.get(tabId, async (tab) => {
+        if (tab && tab.url && tab.url.startsWith("http")) {
+        await chrome.storage.local.set({ [`lastUrl_${tabId}`]: tab.url });
+        }
+        // Ajoute le tabId comme paramètre GET !
+        await chrome.tabs.update(tabId, {
+        url: chrome.runtime.getURL(`pages/${page}?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}&tabId=${tabId}`)
+        });
     });
+
+    } else {
+        // Si url non fournie (peu probable), on bloque sans stocker
+        await chrome.tabs.update(tabId, {
+            url: chrome.runtime.getURL(`pages/${page}?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}`)
+        });
+    }
 }
 
 async function updateUi(tabId, status, domain) {

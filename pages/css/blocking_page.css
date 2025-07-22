@@ -1,9 +1,8 @@
 :root {
-    --primary-color: #2196F3; /* Bleu primaire */
+    --primary-color: #ff7700; /* Bleu primaire */
     --danger-color: #F44336;  /* Rouge principal pour le danger */
     --danger-dark: #D32F2F;
     --secondary-color: #6c757d; /* Gris secondaire */
-    --tertiary-color: #2196F3; /* Gris clair pour bouton tertiaire */
     --background-color: #e0e0e0; /* Fond clair */
     --card-background: #ffffff;
     --text-color-dark: #333;
@@ -74,7 +73,7 @@ body {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background-color: var(--danger-color);
+    background-color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -172,26 +171,15 @@ body {
 }
 
 .btn-tertiary {
-    background-color: var(--tertiary-color);
+    background-color: var(--background-color);
     color: var(--text-color-dark);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--primary-color);
 }
 
 .btn-tertiary:hover {
-    background-color: #e6e6e6;
+    background-color: #ff7f00;
     transform: translateY(-2px);
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
-}
-
-.btn-danger-proceed {
-    background-color: var(--danger-color);
-    color: var(--text-color-light);
-}
-
-.btn-danger-proceed:hover {
-    background-color: var(--danger-dark);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
 }
 
 .warning-text {

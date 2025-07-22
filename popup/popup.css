@@ -86,7 +86,7 @@ body {
     justify-content: center;
     margin-bottom: 6px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.10);
-    background: #f3f3f3;
+    background: #000000;
     transition: background 0.25s;
 }
 
@@ -140,7 +140,7 @@ body {
 
 .current-url {
     font-size: 0.85em;
-    color: #777;
+    color: #777777;
     word-break: break-all;
     margin-top: 2px;
 }

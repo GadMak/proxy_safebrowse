@@ -46,75 +46,93 @@ document.addEventListener('DOMContentLoaded', async () => {
         threatData = threatObj || null;
 
         // 4. Affichage du résumé d’analyse
-        if (threatData) {
-            const threats = Array.isArray(threatData.threats) ? threatData.threats.map(t => t.toLowerCase()) : [];
-            const status = threatData.status || "safe";
-            const ads = threatData.adsCount !== undefined ? threatData.adsCount : (threatData.ads || 0);
-            const isVuln = threats.includes("vulnerability") || threats.includes("vulnérabilité") || threatData.hasVulnerabilities === true;
-            const isPhishing = threats.includes("phishing");
-            const isThreat = (status === 'dangerous') && !isPhishing && !isVuln;
-            const hasAds = ads && ads > 0;
+// ... (tout ton code ci-dessus, inchangé jusqu'ici)
 
-            phishingStatus.textContent = isPhishing ? "Oui" : "Non";
-            threatsStatus.textContent = (isPhishing || isThreat) ? "Oui" : "Non";
-            vulnerabilitiesStatus.textContent = isVuln ? "Oui" : "Non";
-            adsCount.textContent = hasAds ? ads.toString() : "0";
+// 4. Affichage du résumé d’analyse
+if (threatData) {
+    const threats = Array.isArray(threatData.threats) ? threatData.threats.map(t => t.toLowerCase()) : [];
+    const status = threatData.status || "safe";
+    // On ne se fie plus uniquement à threatData.ads ou adsCount
+    let ads = 0;
 
-            // Affichage de l’icône et couleur
-            statusCard.className = 'status-card';
-            statusIcon.parentElement.className = 'status-icon-container';
-            statusMessage.style.color = '';
-            statusMessage.style.fontWeight = 'bold';
+    // Récupère d'abord le nombre de pubs détectées dans threatData
+    if (threatData.adsCount !== undefined) {
+        ads = threatData.adsCount;
+    } else if (threatData.ads !== undefined) {
+        ads = threatData.ads;
+    }
 
-            if (isPhishing) {
-                statusCard.classList.add('status-dangerous-card');
-                statusIcon.className = 'fas fa-skull-crossbones status-icon';
-                statusIcon.parentElement.classList.add('status-dangerous-icon-container');
-                statusMessage.textContent = "🚨 ATTENTION : site de phishing détecté !";
-                statusMessage.style.color = '#c82333';
-            } else if (isThreat) {
-                statusCard.classList.add('status-warning-card');
-                statusIcon.className = 'fas fa-exclamation-triangle status-icon';
-                statusIcon.parentElement.classList.add('status-warning-icon-container');
-                statusMessage.textContent = "⚠️ Menaces sévères détectées.";
-                statusMessage.style.color = '#d35400';
-            } else if (isVuln) {
-                statusCard.classList.add('status-warning-card');
-                statusIcon.className = 'fas fa-bug status-icon';
-                statusIcon.parentElement.classList.add('status-warning-icon-container');
-                statusMessage.textContent = "⚠️ Vulnérabilités détectées.";
-                statusMessage.style.color = '#d35400';
-            } else if (hasAds) {
-                statusCard.classList.add('status-warning-card');
-                statusIcon.className = 'fas fa-ad status-icon';
-                statusIcon.parentElement.classList.add('status-warning-icon-container');
-                statusMessage.textContent = "⚠️ Publicités détectées sur la page.";
-                statusMessage.style.color = '#e67e22';
-            } else if (status === 'whitelisted') {
-                statusCard.classList.add('status-whitelisted-card');
-                statusIcon.className = 'fas fa-shield-alt status-icon';
-                statusIcon.parentElement.classList.add('status-whitelisted-icon-container');
-                statusMessage.textContent = "🔐 Ce site est dans la liste blanche.";
-                statusMessage.style.color = '#2196F3';
-            } else {
-                statusCard.classList.add('status-safe-card');
-                statusIcon.className = 'fas fa-check-circle status-icon';
-                statusIcon.parentElement.classList.add('status-safe-icon-container');
-                statusMessage.textContent = "✅ Cette page semble sûre.";
-                statusMessage.style.color = '#4CAF50';
-            }
-            if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
-        } else {
-            // Analyse en cours
-            statusCard.className = 'status-card';
-            statusIcon.className = 'fas fa-spinner fa-spin status-icon';
-            statusMessage.textContent = "⏳ Analyse en cours...";
-            phishingStatus.textContent = "-";
-            threatsStatus.textContent = "-";
-            vulnerabilitiesStatus.textContent = "-";
-            adsCount.textContent = "0";
-            if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
+    // --- AJOUT : on complète par la valeur de chrome.storage.local.adsBlocked si nécessaire ---
+    // Ceci écrase la valeur précédente si elle est plus à jour
+    chrome.storage.local.get(['adsBlocked'], (result) => {
+        if (typeof result.adsBlocked === 'number' && result.adsBlocked > ads) {
+            ads = result.adsBlocked;
         }
+        // Affichage correct
+        const isVuln = threats.includes("vulnerability") || threats.includes("vulnérabilité") || threatData.hasVulnerabilities === true;
+        const isPhishing = threats.includes("phishing");
+        const isThreat = (status === 'dangerous') && !isPhishing && !isVuln;
+        const hasAds = ads && ads > 0;
+
+        phishingStatus.textContent = isPhishing ? "Oui" : "Non";
+        threatsStatus.textContent = (isPhishing || isThreat) ? "Oui" : "Non";
+        vulnerabilitiesStatus.textContent = isVuln ? "Oui" : "Non";
+        adsCount.textContent = hasAds ? ads.toString() : "0";
+
+        // Affichage de l’icône et couleur (inchangé)
+        statusCard.className = 'status-card';
+        statusIcon.parentElement.className = 'status-icon-container';
+        statusMessage.style.color = '';
+        statusMessage.style.fontWeight = 'bold';
+
+        if (isPhishing) {
+            statusCard.classList.add('status-dangerous-card');
+            statusIcon.className = 'fas fa-skull-crossbones status-icon';
+            statusIcon.parentElement.classList.add('status-dangerous-icon-container');
+            statusMessage.textContent = "🚨 ATTENTION : site de phishing détecté !";
+            statusMessage.style.color = '#c82333';
+        } else if (isThreat) {
+            statusCard.classList.add('status-warning-card');
+            statusIcon.className = 'fas fa-exclamation-triangle status-icon';
+            statusIcon.parentElement.classList.add('status-warning-icon-container');
+            statusMessage.textContent = "⚠️ Menaces sévères détectées.";
+            statusMessage.style.color = '#d35400';
+        } else if (isVuln) {
+            statusCard.classList.add('status-warning-card');
+            statusIcon.className = 'fas fa-bug status-icon';
+            statusIcon.parentElement.classList.add('status-warning-icon-container');
+            statusMessage.textContent = "⚠️ Vulnérabilités détectées.";
+            statusMessage.style.color = '#d35400';
+        } else if (status === 'whitelisted') {
+            statusCard.classList.add('status-whitelisted-card');
+            statusIcon.className = 'fas fa-shield-alt status-icon';
+            statusIcon.parentElement.classList.add('status-whitelisted-icon-container');
+            statusMessage.textContent = "🔐 Ce site est dans la liste blanche.";
+            statusMessage.style.color = '#2196F3';
+        } else {
+            statusCard.classList.add('status-safe-card');
+            statusIcon.className = 'fas fa-check-circle status-icon';
+            statusIcon.parentElement.classList.add('status-safe-icon-container');
+            statusMessage.textContent = "✅ Cette page semble sûre.";
+            statusMessage.style.color = '#4CAF50';
+        }
+        if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
+    });
+
+} else {
+    // Analyse en cours (inchangé)
+    statusCard.className = 'status-card';
+    statusIcon.className = 'fas fa-spinner fa-spin status-icon';
+    statusMessage.textContent = "⏳ Analyse en cours...";
+    phishingStatus.textContent = "-";
+    threatsStatus.textContent = "-";
+    vulnerabilitiesStatus.textContent = "-";
+    adsCount.textContent = "0";
+    if (viewDetailsContainer) viewDetailsContainer.style.display = 'none';
+}
+
+// ... (le reste de ton code inchangé)
+
     } catch (error) {
         console.error("Erreur récupération popup :", error);
         statusMessage.textContent = "❌ Erreur d'analyse.";

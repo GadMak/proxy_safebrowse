@@ -28,8 +28,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Bouton : Retour arrière ---
     goBackBtn.addEventListener('click', () => {
-        window.history.back();
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabId = urlParams.get('tabId');
+        if (tabId) {
+            chrome.storage.local.get(`lastUrl_${tabId}`, (data) => {
+                const previousUrl = data[`lastUrl_${tabId}`];
+                if (previousUrl) {
+                    // Redirige proprement l'onglet courant
+                    console.log("[DEBUG SafeBrowse] tabId", tabId);
+                    console.log("[DEBUG SafeBrowse] previousUrl found:", previousUrl);
+
+                    window.location.href = previousUrl;
+                } else {
+                    console.log("[DEBUG SafeBrowse] tabId", tabId);
+                    console.log("[DEBUG SafeBrowse] previousUrl found:", previousUrl);
+
+                    window.location.href = "https://www.google.com/";
+                }
+            });
+        } else {
+            console.log("[DEBUG SafeBrowse] tabId", tabId);
+            console.log("[DEBUG SafeBrowse] previousUrl found:", previousUrl);
+
+            window.location.href = "https://www.google.com/";
+        }
     });
+    
 
     // --- Bouton : Signaler faux positif ---
     reportFalsePositiveBtn.addEventListener('click', () => {

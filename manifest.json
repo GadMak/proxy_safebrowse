@@ -31,10 +31,11 @@
     {
       "matches": ["http://*/*", "https://*/*"],
       "js": [
+        "content_scripts/adblock_cosmetic.js",
         "content_scripts/content_analyzer.js",
         "content_scripts/extract_features.js"
       ],
-      
+
       "css": ["content_scripts/content_styles.css",
               "content_scripts/adblock_cosmetic.css"],
 

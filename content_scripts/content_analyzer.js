@@ -86,6 +86,19 @@
         }, 10000);
     }
 
+    // content_scripts/content_analyzer.js
+
+    function countAdsOnPage() {
+    // Détecte les pubs (exemple: iframes, div sponsorisées, etc.)
+    let adCount = 0;
+    adCount += document.querySelectorAll('iframe[src*="ads"], iframe[src*="doubleclick"]').length;
+    adCount += document.querySelectorAll('div[id*="ad"], div[class*="ad"]').length;
+    chrome.runtime.sendMessage({ action: "adsCount", value: adCount });
+    }
+
+countAdsOnPage();
+
+
     // --- Réception du background (prioritaire sur toute logique locale) ---
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === "STATUS_UPDATE") {
