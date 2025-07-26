@@ -1,4 +1,4 @@
-// js/blocking_page.js
+// js/phish_block.js
 
 document.addEventListener('DOMContentLoaded', () => {
     const blockedUrlDisplay = document.getElementById('blockedUrlDisplay');
@@ -27,32 +27,17 @@ document.addEventListener('DOMContentLoaded', () => {
     reasonMessage.textContent = `Raison : ${reasonMap[reason] || reasonMap['unknown']}`;
 
     // --- Bouton : Retour arrière ---
-    goBackBtn.addEventListener('click', () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tabId = urlParams.get('tabId');
-        if (tabId) {
-            chrome.storage.local.get(`lastUrl_${tabId}`, (data) => {
-                const previousUrl = data[`lastUrl_${tabId}`];
-                if (previousUrl) {
-                    // Redirige proprement l'onglet courant
-                    console.log("[DEBUG SafeBrowse] tabId", tabId);
-                    console.log("[DEBUG SafeBrowse] previousUrl found:", previousUrl);
-
-                    window.location.href = previousUrl;
-                } else {
-                    console.log("[DEBUG SafeBrowse] tabId", tabId);
-                    console.log("[DEBUG SafeBrowse] previousUrl found:", previousUrl);
-
-                    window.location.href = "https://www.google.com/";
-                }
-            });
-        } else {
-            console.log("[DEBUG SafeBrowse] tabId", tabId);
-            console.log("[DEBUG SafeBrowse] previousUrl found:", previousUrl);
-
-            window.location.href = "https://www.google.com/";
-        }
-    });
+    if (goBackBtn) {
+        goBackBtn.addEventListener('click', () => {
+            if (window.history.length > 2) {
+                window.history.go(-2); // Double retour
+            } else if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = "https://www.google.com/";
+            }
+        });
+    }    
     
 
     // --- Bouton : Signaler faux positif ---
@@ -62,42 +47,26 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.tabs.create({ url: reportUrl });
     });
 
-    // --- Bouton : Continuer quand même ---
-    proceedAnywayBtn.addEventListener('click', async () => {
-        const confirmProceed = confirm(
-            `⚠️ Voulez-vous vraiment continuer vers "${blockedSite}" ?\n` +
-            `Ce site a été bloqué car il pourrait être dangereux.`
-        );
+// --- Bouton : Continuer quand même ---
+proceedAnywayBtn.addEventListener('click', () => {
+    const confirmProceed = confirm(
+        `⚠️ Voulez-vous vraiment continuer vers "${blockedSite}" ?\n` +
+        `Ce site a été bloqué car il pourrait être dangereux.`
+    );
 
-        if (!confirmProceed) return;
+    if (!confirmProceed) return;
 
-        try {
-            const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-            const currentTabId = tabs[0]?.id;
-            if (!currentTabId) throw new Error("Aucun onglet actif trouvé.");
-
-            // Envoi au background pour autorisation temporaire
-            chrome.runtime.sendMessage({
-                action: 'allowTemporaryAccess',
-                url: blockedSite,
-                tabId: currentTabId
-            }, (response) => {
-                if (chrome.runtime.lastError) {
-                    alert("Erreur de communication avec l'extension.");
-                    return;
-                }
-
-                if (response && response.status === 'success') {
-                    chrome.tabs.update(currentTabId, { url: `https://${blockedSite}` });
-                    window.close();
-                } else {
-                    alert("Impossible d'accéder au site. Une erreur est survenue.");
-                }
+    chrome.storage.session.get(['tempWhitelist'], (data) => {
+        let tempWhitelist = data.tempWhitelist || [];
+        if (!tempWhitelist.includes(blockedSite)) {
+            tempWhitelist.push(blockedSite);
+            chrome.storage.session.set({ tempWhitelist }, () => {
+                window.location.href = "https://" + blockedSite;
             });
-
-        } catch (err) {
-            console.error("[SafeBrowse AI] Erreur lors de la tentative de poursuite :", err);
-            alert("Impossible d’ouvrir ce site.");
+        } else {
+            window.location.href = "https://" + blockedSite;
         }
     });
+});
+
 });

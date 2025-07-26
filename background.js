@@ -64,9 +64,15 @@ async function loadAdblockDomainsAndApply() {
                 // Bloque tous les sous-domaines aussi
                 domains: [domain],
                 resourceTypes: [
-                    "main_frame", "sub_frame", "script",
-                    "image", "xmlhttprequest", "media", "other"
-                ]
+                    "main_frame",
+                    "sub_frame",
+                    "script",
+                    "xmlhttprequest",
+                    "media",
+                    "object",
+                    "font",
+                    "other"
+                ]                
             }
         }));
 
@@ -155,6 +161,16 @@ async function analyzeUrlAI(tabId, url) {
         await updateUi(tabId, status, domain);
         return;
     }
+
+    // --- Whitelist temporaire "Continuer quand même" ---
+    const tempWhitelist = (await chrome.storage.session.get('tempWhitelist')).tempWhitelist || [];
+    if (tempWhitelist.includes(domain)) {
+        console.log("[DEBUG] Domaine dans la whitelist temporaire, accès autorisé :", domain);
+        await setAnalysisStatus(tabId, 'whitelisted', url, domain, [], 'Autorisé temporairement');
+        await updateUi(tabId, 'whitelisted', domain);
+        return;
+    }
+
 
     // Blocage immédiat sur blocklist phishing
     if (checkLocalPhishingBlocklist(url)) {
@@ -254,7 +270,7 @@ async function extractFeaturesWithContentScript(tabId) {
 // --- Appel API ML ---
 async function checkPhishingWithML(features) {
     try {
-        const response = await fetch("http://127.0.0.1:5000/predict", {
+        const response = await fetch("https://web-production-30897.up.railway.app/predict", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ features })
@@ -297,18 +313,17 @@ async function blockPage(tabId, domain, reason, url = null, threatType = "phishi
         page = "blocking_page.html";
     }
     if (url) {
-        await chrome.tabs.get(tabId, async (tab) => {
-        if (tab && tab.url && tab.url.startsWith("http")) {
-        await chrome.storage.local.set({ [`lastUrl_${tabId}`]: tab.url });
-        }
-        // Ajoute le tabId comme paramètre GET !
-        await chrome.tabs.update(tabId, {
-        url: chrome.runtime.getURL(`pages/${page}?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}&tabId=${tabId}`)
+        chrome.tabs.get(tabId, async (tab) => {
+            // On garde la logique basique pour que le blocage refonctionne
+            if (tab && tab.url && tab.url.startsWith("http")) {
+                await chrome.storage.local.set({ [`lastUrl_${tabId}`]: tab.url });
+            }
+            // Redirige SANS sessions.getTabValue/setTabValue qui peut bloquer la suite !
+            await chrome.tabs.update(tabId, {
+                url: chrome.runtime.getURL(`pages/${page}?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}&tabId=${tabId}`)
+            });
         });
-    });
-
     } else {
-        // Si url non fournie (peu probable), on bloque sans stocker
         await chrome.tabs.update(tabId, {
             url: chrome.runtime.getURL(`pages/${page}?site=${encodeURIComponent(domain)}&reason=${encodeURIComponent(reason)}`)
         });
