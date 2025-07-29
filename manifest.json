@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "SafeBrowse AI",
   "version": "1.0.0",
-  "description": "Un plugin de navigation intelligent pour la détection et la prévention des sites de phishing, des menaces web, des vulnérabilités, des sites adultes et des publicités.",
+  "description": "Protège votre navigation : détecte et bloque le phishing, les menaces web, les vulnérabilités, les sites adultes et les publicités.",
   "author": "Gad Makengi",
 
   "icons": {
