@@ -1,11 +1,6 @@
 // --- CONSTANTES ET CONFIGURATION ---
-const ICON_PATHS = {
-    safe: { "16": "images/icon_safe_16.png", "32": "images/icon_safe_32.png" },
-    dangerous: { "16": "images/icon_danger_16.png", "32": "images/icon_danger_32.png" },
-    whitelisted: { "16": "images/icon_whitelisted_16.png", "32": "images/icon_whitelisted_16.png" },
-    default: { "16": "images/icon16.png", "32": "images/icon32.png" }
-};
-const MAX_DYNAMIC_RULES = 5000;
+const AD_BLOCK_RULES = 4000;
+const THREAT_BLOCK_RULES = 1000;
 let ADULT_BLOCKLIST = [];
 let PHISHING_BLOCKLIST = [];
 let currentWhitelist = [];
@@ -18,6 +13,76 @@ const HARDCODED_WHITELIST = [
 // --- UTILS ---
 function normalizeDomain(domain) {
     return domain.replace(/^www\./i, '').toLowerCase();
+}
+
+// === Blocage pubs par DNR ===
+async function loadAdblockDomainsAndApply() {
+    try {
+        const url = chrome.runtime.getURL('assets/adblock_list.txt');
+        const response = await fetch(url);
+        const text = await response.text();
+        const domains = text
+            .split('\n')
+            .map(d => d.trim().replace(/^www\./i, '').toLowerCase())
+            .filter(d => d.length > 0 && !d.startsWith('#'))
+            .slice(0, AD_BLOCK_RULES);
+
+        const rules = domains.map((domain, idx) => ({
+            id: idx + 1,
+            priority: 1,
+            action: { type: "block" },
+            condition: {
+                urlFilter: `*://${domain}/*`,
+                resourceTypes: [
+                    "main_frame", "sub_frame", "script", "xmlhttprequest",
+                    "media", "object", "font", "other"
+                ]
+            }
+        }));
+
+        await chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: Array.from({ length: AD_BLOCK_RULES }, (_, i) => i + 1),
+            addRules: rules
+        });
+
+        console.log(`[ADBLOCK] ${rules.length} règles de blocage pubs chargées.`);
+    } catch (err) {
+        console.error("[ADBLOCK] Erreur de chargement/adblock DNR :", err);
+    }
+}
+
+// === Blocage adultes/phishing par DNR ===
+async function applyDynamicThreatBlockingRules() {
+    try {
+        // Nettoie les anciennes règles 5001-6000
+        await chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: Array.from({ length: THREAT_BLOCK_RULES }, (_, i) => i + 5001)
+        });
+
+        let rules = [];
+        let ruleId = 5001;
+        const combinedList = [...ADULT_BLOCKLIST, ...PHISHING_BLOCKLIST];
+        const uniqueDomains = Array.from(new Set(combinedList)).slice(0, THREAT_BLOCK_RULES);
+
+        for (const domain of uniqueDomains) {
+            rules.push({
+                id: ruleId++,
+                priority: 1,
+                action: { type: "block" },
+                condition: {
+                    urlFilter: `*://${domain}/*`,
+                    resourceTypes: ["main_frame"]
+                }
+            });
+        }
+
+        if (rules.length > 0) {
+            await chrome.declarativeNetRequest.updateDynamicRules({ addRules: rules });
+        }
+        console.log(`[DNR] ${rules.length} règles adultes/phishing appliquées.`);
+    } catch (error) {
+        console.error("[DNR] Erreur lors de l'application des règles dynamiques :", error);
+    }
 }
 
 // --- Blocklists ---
@@ -41,51 +106,7 @@ async function reloadBlocklists() {
     ADULT_BLOCKLIST = await loadBlocklist('assets/adult_blocklist.txt', 'adult');
     PHISHING_BLOCKLIST = await loadBlocklist('assets/phishing_blocklist.txt', 'phishing');
     console.log("[DEBUG] Blocklists rechargées.", { ADULT_BLOCKLIST, PHISHING_BLOCKLIST });
-}
-
-// === NOUVEAU : Blocage publicités par DNR ===
-async function loadAdblockDomainsAndApply() {
-    try {
-        const url = chrome.runtime.getURL('assets/adblock_list.txt');
-        const response = await fetch(url);
-        const text = await response.text();
-        const domains = text
-            .split('\n')
-            .map(d => d.trim().replace(/^www\./i, '').toLowerCase())
-            .filter(d => d.length > 0 && !d.startsWith('#'))
-            .slice(0, MAX_DYNAMIC_RULES);
-
-        // Génère les règles DNR
-        const rules = domains.map((domain, idx) => ({
-            id: idx + 1, // ID unique
-            priority: 1,
-            action: { type: "block" },
-            condition: {
-                // Bloque tous les sous-domaines aussi
-                domains: [domain],
-                resourceTypes: [
-                    "main_frame",
-                    "sub_frame",
-                    "script",
-                    "xmlhttprequest",
-                    "media",
-                    "object",
-                    "font",
-                    "other"
-                ]                
-            }
-        }));
-
-        // Applique les règles dynamiques DNR (en remplaçant les anciennes)
-        await chrome.declarativeNetRequest.updateDynamicRules({
-            removeRuleIds: Array.from({ length: MAX_DYNAMIC_RULES }, (_, i) => i + 1),
-            addRules: rules
-        });
-
-        console.log(`[ADBLOCK] ${rules.length} règles de blocage pubs chargées.`);
-    } catch (err) {
-        console.error("[ADBLOCK] Erreur de chargement/adblock DNR :", err);
-    }
+    await applyDynamicThreatBlockingRules();
 }
 
 // --- Initialisation ---
@@ -95,14 +116,13 @@ chrome.runtime.onInstalled.addListener(async () => {
         userWhitelist: [],
         localBlacklist: ["phishing-example.com", "malicious-site.net"]
     });
-    await loadAdblockDomainsAndApply(); // <=== Ajout pour pubs
+    await loadAdblockDomainsAndApply();
     chrome.alarms.create('updateBlocklistAlarm', { delayInMinutes: 5, periodInMinutes: 1440 });
 });
-
 chrome.runtime.onStartup.addListener(async () => {
     await loadAdblockDomainsAndApply();
+    await reloadBlocklists();
 });
-
 chrome.alarms.onAlarm.addListener(async alarm => {
     if (alarm.name === 'updateBlocklistAlarm') {
         await reloadBlocklists();
@@ -110,6 +130,7 @@ chrome.alarms.onAlarm.addListener(async alarm => {
     }
 });
 
+// --- Whitelist user ---
 chrome.storage.sync.get('userWhitelist', (data) => {
     currentWhitelist = (data.userWhitelist || []).map(normalizeDomain);
 });

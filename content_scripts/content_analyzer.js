@@ -2,6 +2,32 @@
     const currentUrl = window.location.href;
     const currentHostname = new URL(currentUrl).hostname.replace(/^www\./, '');
 
+    // --- Forçage SafeSearch sur Google ---
+    if (currentHostname.includes("google.")) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get("safe") !== "active") {
+            url.searchParams.set("safe", "active");
+            window.location.href = url.toString();
+            return;
+        }
+    }
+
+    // --- Masquage dynamique des miniatures adultes (Google Images/Vidéos) ---
+    const adultKeywords = ['xvideo', 'porn', 'xxx', 'fuck', 'sex', 'redtube','X-rated', 'xnxx', 'hentai', '18+','Sextape'];
+    function hideAdultContent() {
+        document.querySelectorAll("img, a, span, div").forEach(el => {
+            const content = (el.alt || '') + (el.src || '') + (el.innerText || '');
+            const normalized = content.toLowerCase();
+            if (adultKeywords.some(word => normalized.includes(word))) {
+                el.style.display = 'none';
+            }
+        });
+    }
+
+    if (currentHostname.includes("google.")) {
+        setInterval(hideAdultContent, 1500); // vérifie régulièrement (contenu dynamique)
+    }
+
     // --- Gestion de la bannière unique ---
     function removeExistingBanner() {
         const existing = document.getElementById('safebrowse-ai-alert-banner');
@@ -10,7 +36,7 @@
 
     function updateBanner(status, threats, reason) {
         removeExistingBanner();
-        if (status === 'safe' || status === 'whitelisted') return; // Pas de bannière verte
+        if (status === 'safe' || status === 'whitelisted') return;
 
         const banner = document.createElement('div');
         banner.id = 'safebrowse-ai-alert-banner';
@@ -86,32 +112,28 @@
         }, 10000);
     }
 
-    // content_scripts/content_analyzer.js
-
+    // --- Comptage des pubs ---
     function countAdsOnPage() {
-    // Détecte les pubs (exemple: iframes, div sponsorisées, etc.)
-    let adCount = 0;
-    adCount += document.querySelectorAll('iframe[src*="ads"], iframe[src*="doubleclick"]').length;
-    adCount += document.querySelectorAll('div[id*="ad"], div[class*="ad"]').length;
-    chrome.runtime.sendMessage({ action: "adsCount", value: adCount });
+        let adCount = 0;
+        adCount += document.querySelectorAll('iframe[src*="ads"], iframe[src*="doubleclick"]').length;
+        adCount += document.querySelectorAll('div[id*="ad"], div[class*="ad"]').length;
+        chrome.runtime.sendMessage({ action: "adsCount", value: adCount });
     }
 
-countAdsOnPage();
+    countAdsOnPage();
 
-
-    // --- Réception du background (prioritaire sur toute logique locale) ---
+    // --- Réception du background ---
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.action === "STATUS_UPDATE") {
             updateBanner(message.status, message.threats, message.reason);
         }
     });
 
-    // --- Demande du statut au background au chargement ---
+    // --- Statut au chargement ---
     const tabId = await new Promise((resolve) => {
         chrome.runtime.sendMessage({ type: 'GET_TAB_ID' }, (res) => resolve(res?.tabId));
     });
 
-    // Lecture immédiate du statut s'il existe déjà dans le storage
     chrome.storage.local.get(null, (all) => {
         const key = tabId ? `threats_${tabId}` : null;
         if (key && all[key]) {
@@ -119,7 +141,5 @@ countAdsOnPage();
             updateBanner(d.status, d.threats, d.reason);
         }
     });
-
-    // --- Optionnel : ta logique locale peut être gardée ici pour fallback (en cas d’absence de background), sinon retire-la ---
 
 })();

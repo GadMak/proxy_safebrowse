@@ -29,7 +29,14 @@
 
   "content_scripts": [
     {
-      "matches": ["http://*/*", "https://*/*"],
+      "matches": [
+        "https://*.google.com/*",
+        "https://*.bing.com/*",
+        "https://*.yahoo.com/*",
+        "https://*.duckduckgo.com/*",
+        "http://*.apple.com/*",
+        "https://*.amazon.com/*"
+      ],      
       "js": [
         "content_scripts/adblock_cosmetic.js",
         "content_scripts/content_analyzer.js",
@@ -91,7 +98,12 @@
         "id": "rules_adblock",
         "enabled": true,
         "path": "assets/rules_adblock.json"
+      },
+      {
+        "id": "rules_dynamic_init",
+        "enabled": true,
+        "path": "assets/rules_dynamic_init.json"
       }
     ]
-  }
+  }  
 }
